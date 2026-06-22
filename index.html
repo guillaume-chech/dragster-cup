@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="description" content="Dragster Cup — Gestion de la compétition de dragsters, tirage au sort, résultats et podium." />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>🏁 Dragster Cup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== RESET & TOKENS ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:      #E10600;
+      --red-dark: #a00400;
+      --gold:     #FFD700;
+      --silver:   #C0C0C0;
+      --bronze:   #CD7F32;
+      --bg:       #0a0a0a;
+      --bg2:      #111111;
+      --bg3:      #1a1a1a;
+      --bg4:      #222222;
+      --border:   #2a2a2a;
+      --text:     #f0f0f0;
+      --muted:    #888888;
+      --green:    #22c55e;
+      --blue:     #3b82f6;
+      --orange:   #f97316;
+      --font-main: 'Rajdhani', sans-serif;
+      --font-display: 'Orbitron', monospace;
+      --r: 10px;
+      --r-sm: 6px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-main);
+      font-size: 16px;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* ===== LAYOUT ===== */
+    #app {
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* ===== HEADER ===== */
+    .app-header {
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a0000 100%);
+      border-bottom: 2px solid var(--red);
+      padding: 12px 16px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-logo { font-size: 22px; }
+    .header-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--red);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .header-phase {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* ===== SCREENS ===== */
+    .screen { display: none; flex-direction: column; flex: 1; padding: 16px; gap: 14px; }
+    .screen.active { display: flex; }
+
+    /* ===== CARD ===== */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px;
+    }
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--red);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: var(--r-sm);
+      border: none;
+      font-family: var(--font-main);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .15s;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active { transform: scale(.96); }
+    .btn-primary { background: var(--red); color: #fff; }
+    .btn-primary:hover { background: var(--red-dark); }
+    .btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+    .btn-gold { background: linear-gradient(135deg, #b8860b, var(--gold)); color: #000; }
+    .btn-green { background: var(--green); color: #000; }
+    .btn-sm { padding: 8px 14px; font-size: 13px; }
+    .btn-full { width: 100%; }
+    .btn-disabled { opacity: .4; pointer-events: none; }
+
+    /* ===== PHASE BADGE ===== */
+    .phase-banner {
+      background: linear-gradient(135deg, var(--red-dark), #300);
+      border: 1px solid var(--red);
+      border-radius: var(--r);
+      padding: 14px 16px;
+      text-align: center;
+    }
+    .phase-banner .phase-name {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--gold);
+      letter-spacing: 3px;
+    }
+    .phase-banner .phase-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ===== TEAM GRID (Validation) ===== */
+    .team-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .team-card {
+      background: var(--bg3);
+      border: 2px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 10px 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .team-card.present {
+      border-color: var(--green);
+      background: rgba(34,197,94,.08);
+    }
+    .team-card.absent {
+      border-color: var(--border);
+      opacity: .45;
+    }
+    .team-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      color: #000;
+      overflow: hidden;
+    }
+    .team-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .team-name { font-size: 12px; font-weight: 600; flex: 1; line-height: 1.2; }
+    .team-status { font-size: 16px; flex-shrink: 0; }
+
+    /* ===== DRAW ANIMATION ===== */
+    #drawOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.95);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+    }
+    #drawOverlay.active { display: flex; }
+    .draw-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--gold);
+      letter-spacing: 3px;
+      text-align: center;
+      padding: 0 20px;
+    }
+    .draw-slots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      padding: 0 16px;
+    }
+    .draw-slot {
+      background: var(--bg3);
+      border: 2px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(20px) scale(.8);
+      transition: all .4s cubic-bezier(.34,1.56,.64,1);
+      text-align: center;
+    }
+    .draw-slot.revealed {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      border-color: var(--red);
+      background: rgba(225,6,0,.12);
+    }
+    .draw-progress {
+      font-size: 13px;
+      color: var(--muted);
+      font-family: var(--font-display);
+    }
+
+    /* ===== POOL DISPLAY ===== */
+    .pool-grid { display: flex; flex-direction: column; gap: 10px; }
+    .pool-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+    }
+    .pool-header {
+      background: linear-gradient(90deg, rgba(225,6,0,.2), transparent);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pool-letter {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--red);
+    }
+    .pool-label { font-size: 12px; color: var(--muted); }
+    .pool-teams { padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; }
+    .pool-team-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+    }
+    .pool-team-logo {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 9px;
+      font-weight: 700;
+      color: #000;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .pool-team-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .pool-team-name { font-size: 13px; font-weight: 600; flex: 1; }
+    .pool-team-pts { font-family: var(--font-display); font-size: 12px; color: var(--muted); }
+
+    /* ===== RACE INTERFACE ===== */
+    .race-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .race-nav-info { text-align: center; flex: 1; }
+    .race-nav-title { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--gold); }
+    .race-nav-sub { font-size: 12px; color: var(--muted); }
+
+    .race-tabs {
+      display: flex;
+      background: var(--bg3);
+      border-radius: var(--r-sm);
+      padding: 3px;
+      gap: 3px;
+    }
+    .race-tab {
+      flex: 1;
+      padding: 8px 6px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: var(--font-display);
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all .15s;
+      color: var(--muted);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .race-tab.active {
+      background: var(--red);
+      color: #fff;
+    }
+    .race-tab.done {
+      color: var(--green);
+    }
+
+    /* ===== RACE ENTRY ===== */
+    .race-entry {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .racer-row {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: border-color .15s;
+    }
+    .racer-row.ranked { border-color: rgba(255,215,0,.3); }
+    .racer-row.dnf-row { border-color: rgba(225,6,0,.3); opacity: .7; }
+    .racer-rank {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+    .rank-1 { background: var(--gold); color: #000; }
+    .rank-2 { background: var(--silver); color: #000; }
+    .rank-3 { background: var(--bronze); color: #000; }
+    .rank-4 { background: var(--bg4); color: var(--muted); border: 1px solid var(--border); }
+    .rank-dnf { background: var(--red); color: #fff; font-size: 9px; }
+    .rank-empty { background: var(--bg4); color: var(--muted); border: 1px dashed var(--border); }
+    .racer-logo-sm {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 9px;
+      font-weight: 700;
+      color: #000;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .racer-logo-sm img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .racer-name { flex: 1; font-size: 14px; font-weight: 600; }
+    .racer-pts {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gold);
+      min-width: 36px;
+      text-align: right;
+    }
+    .racer-actions { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+    .btn-rank {
+      padding: 6px 8px;
+      font-size: 12px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background: var(--bg4);
+      color: var(--text);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all .12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-rank:active { transform: scale(.9); }
+    .btn-rank.selected { background: var(--red); border-color: var(--red); color: #fff; }
+    .btn-rank-dnf.selected { background: var(--red); border-color: var(--red); color: #fff; }
+    .btn-var {
+      padding: 6px 10px;
+      font-size: 11px;
+      font-family: var(--font-display);
+      background: rgba(249,115,22,.15);
+      border: 1px solid var(--orange);
+      color: var(--orange);
+      border-radius: 4px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== STANDINGS ===== */
+    .standings { display: flex; flex-direction: column; gap: 4px; }
+    .standing-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: var(--bg3);
+      border-radius: var(--r-sm);
+      border: 1px solid var(--border);
+    }
+    .standing-pos {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 900;
+      width: 20px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .pos-qualified { color: var(--green); }
+    .pos-wild { color: var(--blue); }
+    .pos-eliminated { color: var(--muted); }
+    .standing-logo {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 9px; font-weight: 700; color: #000;
+      flex-shrink: 0; overflow: hidden;
+    }
+    .standing-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .standing-name { flex: 1; font-size: 13px; font-weight: 600; }
+    .standing-pts { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--gold); }
+    .standing-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      letter-spacing: .5px;
+    }
+    .badge-q { background: rgba(34,197,94,.2); color: var(--green); border: 1px solid var(--green); }
+    .badge-w { background: rgba(59,130,246,.2); color: var(--blue); border: 1px solid var(--blue); }
+    .badge-x { background: rgba(225,6,0,.15); color: var(--red); border: 1px solid var(--red); }
+
+    /* ===== PODIUM ===== */
+    #podiumScreen {
+      background: radial-gradient(ellipse at top, #1a0000 0%, var(--bg) 70%);
+    }
+    .podium-wrap {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 8px;
+      padding: 20px 10px 0;
+    }
+    .podium-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .podium-logo-wrap {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      color: #000;
+      overflow: hidden;
+      border: 3px solid transparent;
+    }
+    .podium-logo-wrap img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .p1 .podium-logo-wrap { width: 72px; height: 72px; border-color: var(--gold); box-shadow: 0 0 20px rgba(255,215,0,.5); }
+    .p2 .podium-logo-wrap { border-color: var(--silver); box-shadow: 0 0 12px rgba(192,192,192,.3); }
+    .p3 .podium-logo-wrap { border-color: var(--bronze); box-shadow: 0 0 12px rgba(205,127,50,.3); }
+    .podium-team-name {
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      max-width: 80px;
+      line-height: 1.2;
+    }
+    .podium-block {
+      border-radius: 8px 8px 0 0;
+      width: 90px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 10px 6px;
+    }
+    .p1 .podium-block { height: 90px; background: linear-gradient(180deg, #b8860b, #7a5800); }
+    .p2 .podium-block { height: 65px; background: linear-gradient(180deg, #888, #444); }
+    .p3 .podium-block { height: 50px; background: linear-gradient(180deg, #8B5E3C, #4a3020); }
+    .podium-rank-num {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 900;
+      color: rgba(0,0,0,.6);
+    }
+    .podium-pts-small { font-size: 11px; color: rgba(0,0,0,.5); font-weight: 700; }
+
+    .trophy-row {
+      display: flex;
+      gap: 8px;
+    }
+    .trophy-card {
+      flex: 1;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 10px;
+      text-align: center;
+    }
+    .trophy-icon { font-size: 24px; }
+    .trophy-label { font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: .5px; text-transform: uppercase; margin: 4px 0 2px; }
+    .trophy-winner { font-size: 12px; font-weight: 700; color: var(--gold); }
+
+    /* ===== CONFETTI ===== */
+    .confetti-piece {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 9999;
+      animation: confettiFall linear forwards;
+    }
+    @keyframes confettiFall {
+      0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* ===== VAR MODAL ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.8);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 20px;
+      width: 100%;
+      max-width: 380px;
+    }
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--orange);
+      margin-bottom: 14px;
+      letter-spacing: 1px;
+    }
+    .modal-btn-row { display: flex; gap: 8px; margin-top: 16px; }
+    .modal-team-btn {
+      flex: 1;
+      padding: 12px 6px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      -webkit-tap-highlight-color: transparent;
+      transition: all .15s;
+    }
+    .modal-team-btn:active { transform: scale(.96); background: rgba(225,6,0,.15); border-color: var(--red); }
+
+    /* ===== TOAST ===== */
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      z-index: 9000;
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+      pointer-events: none;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ===== MISC ===== */
+    .divider { height: 1px; background: var(--border); margin: 2px 0; }
+    .text-center { text-align: center; }
+    .text-muted { color: var(--muted); font-size: 13px; }
+    .row { display: flex; gap: 8px; }
+    .flag-icon { font-size: 20px; }
+    .alert-warn {
+      background: rgba(249,115,22,.1);
+      border: 1px solid var(--orange);
+      border-radius: var(--r-sm);
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--orange);
+    }
+    .alert-ok {
+      background: rgba(34,197,94,.1);
+      border: 1px solid var(--green);
+      border-radius: var(--r-sm);
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--green);
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid var(--border);
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ===== SAFE AREA ===== */
+    .screen { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- HEADER -->
+  <header class="app-header">
+    <span class="header-logo">🏁</span>
+    <span class="header-title">Dragster Cup</span>
+    <span class="header-phase" id="headerPhase">Setup</span>
+  </header>
+
+  <!-- ===================== SCREEN 0 : VALIDATION ===================== -->
+  <div class="screen active" id="screen-validate">
+    <div class="phase-banner">
+      <div class="phase-name">🏎 VALIDATION</div>
+      <div class="phase-sub">Cochez les écuries présentes</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Présence des écuries</div>
+      <div id="teamGrid" class="team-grid"></div>
+    </div>
+    <div id="presenceInfo" class="alert-ok text-center" style="font-weight:700"></div>
+    <button class="btn btn-primary btn-full" id="btnDraw" onclick="startDraw()">
+      🎲 Tirer les poules au sort
+    </button>
+  </div>
+
+  <!-- ===================== SCREEN 1 : POULES ===================== -->
+  <div class="screen" id="screen-pools">
+    <div class="phase-banner">
+      <div class="phase-name">⚡ QUALIFICATIONS</div>
+      <div class="phase-sub" id="poolsSubtitle">Phase de poules</div>
+    </div>
+
+    <!-- Pool Navigator -->
+    <div class="race-nav">
+      <button class="btn btn-secondary btn-sm" onclick="navPool(-1)">◀</button>
+      <div class="race-nav-info">
+        <div class="race-nav-title" id="currentPoolLabel">POULE A</div>
+        <div class="race-nav-sub" id="currentPoolTeams"></div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="navPool(1)">▶</button>
+    </div>
+
+    <!-- Race tabs -->
+    <div class="race-tabs" id="raceTabs">
+      <div class="race-tab active" id="tab-A" onclick="selectRace('A')">
+        🏃 SPRINT<br><span style="font-size:10px;opacity:.7">3m</span>
+      </div>
+      <div class="race-tab" id="tab-B" onclick="selectRace('B')">
+        🏁 LONG<br><span style="font-size:10px;opacity:.7">6m</span>
+      </div>
+    </div>
+
+    <!-- Race entry -->
+    <div class="card">
+      <div class="card-title" id="raceLabel">Course A — Sprint 3m</div>
+      <div id="racerList" class="race-entry"></div>
+    </div>
+
+    <!-- VAR button -->
+    <button class="btn-var btn-full" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:var(--r-sm);font-size:14px;font-weight:700;cursor:pointer;width:100%;background:rgba(249,115,22,.1);border:1px solid var(--orange);color:var(--orange);" onclick="openVAR()">
+      📹 DÉCISION VAR — Collision
+    </button>
+
+    <!-- Validate pool -->
+    <button class="btn btn-green btn-full" id="btnValidatePool" onclick="validateCurrentPool()">
+      ✅ Valider la Poule
+    </button>
+
+    <!-- Standings preview -->
+    <div class="card" id="poolStandingsCard" style="display:none">
+      <div class="card-title">📊 Classement de la poule</div>
+      <div id="poolStandings" class="standings"></div>
+    </div>
+  </div>
+
+  <!-- ===================== SCREEN 2 : QUALIFICATION RESULTS ===================== -->
+  <div class="screen" id="screen-qualifs">
+    <div class="phase-banner">
+      <div class="phase-name">📋 CLASSEMENT GÉNÉRAL</div>
+      <div class="phase-sub">Top 16 pour les Quarts de Finale</div>
+    </div>
+    <div id="qualifInfo" class="card">
+      <div class="card-title">Qualifiés &amp; Éliminés</div>
+      <div id="qualifList" class="standings"></div>
+    </div>
+    <div id="tieAlert" style="display:none" class="alert-warn">
+      ⚠️ ÉGALITÉ DÉTECTÉE — Une manche de barrage est nécessaire pour la 16ème place.
+    </div>
+    <div class="row">
+      <button class="btn btn-secondary" style="flex:1" onclick="goBackToPools()">◀ Corriger</button>
+      <button class="btn btn-primary" style="flex:1" onclick="startQuarters()">Quarts ▶</button>
+    </div>
+  </div>
+
+  <!-- ===================== SCREEN 3 : QUARTS ===================== -->
+  <div class="screen" id="screen-quarters">
+    <div class="phase-banner">
+      <div class="phase-name">⚔️ QUARTS DE FINALE</div>
+      <div class="phase-sub" id="quartersSubtitle"></div>
+    </div>
+
+    <div class="race-nav">
+      <button class="btn btn-secondary btn-sm" onclick="navGroup('Q', -1)">◀</button>
+      <div class="race-nav-info">
+        <div class="race-nav-title" id="currentGroupLabelQ">GROUPE 1</div>
+        <div class="race-nav-sub" id="currentGroupTeamsQ"></div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="navGroup('Q', 1)">▶</button>
+    </div>
+
+    <div class="race-tabs" id="raceTabsQ">
+      <div class="race-tab active" id="tabQ-A" onclick="selectRaceKO('Q','A')">
+        🏃 SPRINT<br><span style="font-size:10px;opacity:.7">3m</span>
+      </div>
+      <div class="race-tab" id="tabQ-B" onclick="selectRaceKO('Q','B')">
+        🏁 LONG<br><span style="font-size:10px;opacity:.7">6m</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="raceLabelQ">Course A — Sprint 3m</div>
+      <div id="racerListQ" class="race-entry"></div>
+    </div>
+
+    <button class="btn-var" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:var(--r-sm);font-size:14px;font-weight:700;cursor:pointer;width:100%;background:rgba(249,115,22,.1);border:1px solid var(--orange);color:var(--orange);" onclick="openVAR('Q')">
+      📹 DÉCISION VAR — Collision
+    </button>
+
+    <button class="btn btn-green btn-full" id="btnValidateGroupQ" onclick="validateCurrentGroup('Q')">
+      ✅ Valider le Groupe
+    </button>
+
+    <div class="card" id="groupStandingsCardQ" style="display:none">
+      <div class="card-title">📊 Classement du groupe</div>
+      <div id="groupStandingsQ" class="standings"></div>
+    </div>
+  </div>
+
+  <!-- ===================== SCREEN 4 : SEMI RESULTS ===================== -->
+  <div class="screen" id="screen-semis-draw">
+    <div class="phase-banner">
+      <div class="phase-name">🎯 DEMI-FINALES</div>
+      <div class="phase-sub">Tirage au sort des groupes</div>
+    </div>
+    <div class="card">
+      <div class="card-title">8 Qualifiés des Quarts</div>
+      <div id="semisQualifiedList" class="standings"></div>
+    </div>
+    <button class="btn btn-gold btn-full" onclick="drawSemis()">🎲 Tirer les groupes Demis</button>
+  </div>
+
+  <!-- ===================== SCREEN 5 : SEMIS ===================== -->
+  <div class="screen" id="screen-semis">
+    <div class="phase-banner">
+      <div class="phase-name">🔥 DEMI-FINALES</div>
+      <div class="phase-sub" id="semisSubtitle"></div>
+    </div>
+
+    <div class="race-nav">
+      <button class="btn btn-secondary btn-sm" onclick="navGroup('S', -1)">◀</button>
+      <div class="race-nav-info">
+        <div class="race-nav-title" id="currentGroupLabelS">GROUPE 1</div>
+        <div class="race-nav-sub" id="currentGroupTeamsS"></div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="navGroup('S', 1)">▶</button>
+    </div>
+
+    <div class="race-tabs" id="raceTabsS">
+      <div class="race-tab active" id="tabS-A" onclick="selectRaceKO('S','A')">
+        🏃 SPRINT<br><span style="font-size:10px;opacity:.7">3m</span>
+      </div>
+      <div class="race-tab" id="tabS-B" onclick="selectRaceKO('S','B')">
+        🏁 LONG<br><span style="font-size:10px;opacity:.7">6m</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="raceLabelS">Course A — Sprint 3m</div>
+      <div id="racerListS" class="race-entry"></div>
+    </div>
+
+    <button class="btn-var" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:var(--r-sm);font-size:14px;font-weight:700;cursor:pointer;width:100%;background:rgba(249,115,22,.1);border:1px solid var(--orange);color:var(--orange);" onclick="openVAR('S')">
+      📹 DÉCISION VAR — Collision
+    </button>
+
+    <button class="btn btn-green btn-full" id="btnValidateGroupS" onclick="validateCurrentGroup('S')">
+      ✅ Valider le Groupe
+    </button>
+
+    <div class="card" id="groupStandingsCardS" style="display:none">
+      <div class="card-title">📊 Classement du groupe</div>
+      <div id="groupStandingsS" class="standings"></div>
+    </div>
+  </div>
+
+  <!-- ===================== SCREEN 6 : FINALE ===================== -->
+  <div class="screen" id="screen-final">
+    <div class="phase-banner" style="background:linear-gradient(135deg,#1a0d00,#000);border-color:var(--gold)">
+      <div class="phase-name" style="color:var(--gold)">🏆 GRANDE FINALE</div>
+      <div class="phase-sub">4 finalistes • 2 courses • 3 titres</div>
+    </div>
+
+    <div class="race-tabs" id="raceTabsF">
+      <div class="race-tab active" id="tabF-A" onclick="selectRaceKO('F','A')">
+        🏃 SPRINT<br><span style="font-size:10px;opacity:.7">3m</span>
+      </div>
+      <div class="race-tab" id="tabF-B" onclick="selectRaceKO('F','B')">
+        🏁 LONG<br><span style="font-size:10px;opacity:.7">6m</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="raceLabelF">Course A — Sprint 3m</div>
+      <div id="racerListF" class="race-entry"></div>
+    </div>
+
+    <button class="btn-var" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:var(--r-sm);font-size:14px;font-weight:700;cursor:pointer;width:100%;background:rgba(249,115,22,.1);border:1px solid var(--orange);color:var(--orange);" onclick="openVAR('F')">
+      📹 DÉCISION VAR — Collision
+    </button>
+
+    <button class="btn btn-gold btn-full" id="btnFinale" onclick="showPodium()">
+      🏆 Afficher le Podium
+    </button>
+  </div>
+
+  <!-- ===================== SCREEN 7 : PODIUM ===================== -->
+  <div class="screen" id="podiumScreen">
+    <div class="phase-banner" style="background:linear-gradient(135deg,#1a0d00,#000);border-color:var(--gold)">
+      <div class="phase-name" style="color:var(--gold)">🏆 PODIUM FINAL</div>
+      <div class="phase-sub">Dragster Cup — Champion(s) !</div>
+    </div>
+
+    <div class="podium-wrap" id="podiumWrap"></div>
+
+    <div class="card" style="border-color:var(--gold)">
+      <div class="card-title" style="color:var(--gold)">🏆 LES 3 TITRES</div>
+      <div class="trophy-row" id="trophyRow"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏁 Classement Complet Finale</div>
+      <div id="finalStandings" class="standings"></div>
+    </div>
+
+    <button class="btn btn-secondary btn-full" onclick="resetAll()" style="margin-top:4px">
+      🔄 Nouvelle Compétition
+    </button>
+  </div>
+</div>
+
+<!-- ===== DRAW OVERLAY ===== -->
+<div id="drawOverlay">
+  <div class="spinner" id="drawSpinner"></div>
+  <div class="draw-title" id="drawTitle">Tirage au sort en cours…</div>
+  <div class="draw-progress" id="drawProgress"></div>
+  <div class="draw-slots" id="drawSlots"></div>
+  <button class="btn btn-primary" id="drawCloseBtn" style="display:none;margin-top:10px" onclick="closeDraw()">
+    ✅ Démarrer la compétition
+  </button>
+</div>
+
+<!-- ===== VAR MODAL ===== -->
+<div class="modal-overlay" id="varModal">
+  <div class="modal">
+    <div class="modal-title">📹 DÉCISION VAR — Collision</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">
+      Quel dragster a fauté ? Le fautif prend DNF (0 pt). La victime récupère 6 pts.
+    </p>
+    <div id="varTeamsList"></div>
+    <div class="modal-btn-row">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeVAR()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// =====================================================
+//  DATA — 24 ÉCURIES
+// =====================================================
+const TEAMS_DATA = [
+  { id:  1, name: "Écurie 01", color: "#E10600" },
+  { id:  2, name: "Écurie 02", color: "#1E90FF" },
+  { id:  3, name: "Écurie 03", color: "#22c55e" },
+  { id:  4, name: "Écurie 04", color: "#FFD700" },
+  { id:  5, name: "Écurie 05", color: "#FF6B35" },
+  { id:  6, name: "Écurie 06", color: "#9B59B6" },
+  { id:  7, name: "Écurie 07", color: "#00BCD4" },
+  { id:  8, name: "Écurie 08", color: "#FF1493" },
+  { id:  9, name: "Écurie 09", color: "#FF8C00" },
+  { id: 10, name: "Écurie 10", color: "#4169E1" },
+  { id: 11, name: "Écurie 11", color: "#DC143C" },
+  { id: 12, name: "Écurie 12", color: "#2ECC71" },
+  { id: 13, name: "Écurie 13", color: "#F39C12" },
+  { id: 14, name: "Écurie 14", color: "#8E44AD" },
+  { id: 15, name: "Écurie 15", color: "#16A085" },
+  { id: 16, name: "Écurie 16", color: "#E74C3C" },
+  { id: 17, name: "Écurie 17", color: "#3498DB" },
+  { id: 18, name: "Écurie 18", color: "#27AE60" },
+  { id: 19, name: "Écurie 19", color: "#F1C40F" },
+  { id: 20, name: "Écurie 20", color: "#E67E22" },
+  { id: 21, name: "Écurie 21", color: "#1ABC9C" },
+  { id: 22, name: "Écurie 22", color: "#C0392B" },
+  { id: 23, name: "Écurie 23", color: "#2980B9" },
+  { id: 24, name: "Écurie 24", color: "#8BC34A" },
+];
+
+const PTS = { 1: 10, 2: 6, 3: 3, 4: 1, dnf: 0 };
+const RACE_NAMES = { A: "Sprint 3m", B: "Long 6m" };
+
+// =====================================================
+//  STATE
+// =====================================================
+let state = {
+  present: new Array(24).fill(true),
+  pools: [],          // [{letter, teams:[id,...]}, ...]
+  poolResults: {},    // poolIdx -> {A:{teamId->rank_or_dnf}, B:{...}}
+  poolValidated: [],  // bool per pool
+  qualifiedIds: [],   // top 16 (or less)
+  // Quarters
+  qGroups: [],        // [{teams:[id,...]}, ...]
+  qResults: {},       // groupIdx -> {A:{...}, B:{...}}
+  qValidated: [],
+  semisIds: [],       // 8 qualifiés
+  // Semis
+  sGroups: [],
+  sResults: {},
+  sValidated: [],
+  finalistsIds: [],   // 4
+  // Final
+  fResults: {},       // {A:{teamId->rank_or_dnf}, B:{...}}
+  // UI
+  currentPool: 0,
+  currentRace: 'A',
+  currentGroupQ: 0,
+  currentRaceQ: 'A',
+  currentGroupS: 0,
+  currentRaceS: 'A',
+  currentRaceF: 'A',
+  varContext: null,   // 'P','Q','S','F'
+};
+
+function saveState() {
+  try { localStorage.setItem('dragsterCup', JSON.stringify(state)); } catch(e) {}
+}
+function loadState() {
+  try {
+    const s = localStorage.getItem('dragsterCup');
+    if (s) state = { ...state, ...JSON.parse(s) };
+  } catch(e) {}
+}
+
+// =====================================================
+//  HELPERS
+// =====================================================
+function getTeam(id) { return TEAMS_DATA.find(t => t.id === id); }
+
+function logoHTML(teamId, size = 36) {
+  const t = getTeam(teamId);
+  if (!t) return '';
+  const initials = t.name.replace('Écurie ', '#');
+  const imgPath = `img/ecurie-${String(t.id).padStart(2,'0')}.png`;
+  return `<div class="team-logo" style="width:${size}px;height:${size}px;background:${t.color}">
+    <img src="${imgPath}" alt="${t.name}" onerror="this.parentElement.innerHTML='<span style=\\'font-family:var(--font-display);font-size:${Math.round(size*.28)}px;font-weight:700;color:#000\\'>${initials}</span>'" />
+  </div>`;
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showToast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function setHeaderPhase(txt) {
+  document.getElementById('headerPhase').textContent = txt;
+}
+
+// =====================================================
+//  POOL COMPUTATION
+// =====================================================
+function computePools(presentIds) {
+  // Distribute n teams into pools of 3 or 4, maximizing size-4 pools.
+  // Always produces pools of exactly 3 or 4 (never 2 or 1).
+  const n = presentIds.length;
+  // We need: 4*a + 3*b = n, with a,b >= 0
+  // Maximize a (pools of 4), then fill remainder with b (pools of 3)
+  let pools4 = 0, pools3 = 0;
+  for (let a = Math.floor(n / 4); a >= 0; a--) {
+    const rem = n - 4 * a;
+    if (rem >= 0 && rem % 3 === 0) {
+      pools4 = a;
+      pools3 = rem / 3;
+      break;
+    }
+  }
+  // Edge case: if n < 3, can't form valid pools — block at UI level
+  const totalPools = pools4 + pools3;
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const shuffled = shuffle(presentIds);
+  let idx = 0;
+  const pools = [];
+  for (let i = 0; i < totalPools; i++) {
+    const size = i < pools4 ? 4 : 3;
+    pools.push({ letter: letters[i], teams: shuffled.slice(idx, idx + size) });
+    idx += size;
+  }
+  return pools;
+}
+
+function computeGroups(qualIds, groupSize = 4) {
+  const shuffled = shuffle(qualIds);
+  const groups = [];
+  for (let i = 0; i < shuffled.length; i += groupSize) {
+    groups.push({ teams: shuffled.slice(i, i + groupSize) });
+  }
+  return groups;
+}
+
+// =====================================================
+//  POINTS CALCULATION
+// =====================================================
+function getRacePoints(raceResult) {
+  // raceResult: {teamId: 1|2|3|4|'dnf'}
+  const pts = {};
+  for (const [tid, rank] of Object.entries(raceResult)) {
+    pts[parseInt(tid)] = PTS[rank] ?? 0;
+  }
+  return pts;
+}
+
+function getPoolTotalPts(poolIdx) {
+  const res = state.poolResults[poolIdx] || {};
+  const teams = state.pools[poolIdx].teams;
+  const totals = {};
+  teams.forEach(tid => totals[tid] = 0);
+  for (const race of ['A','B']) {
+    if (res[race]) {
+      const pts = getRacePoints(res[race]);
+      for (const tid of teams) { totals[tid] = (totals[tid]||0) + (pts[tid]||0); }
+    }
+  }
+  return totals;
+}
+
+function getGroupTotalPts(phase, groupIdx) {
+  const groups = phase === 'Q' ? state.qGroups : state.sGroups;
+  const results = phase === 'Q' ? state.qResults : state.sResults;
+  const res = results[groupIdx] || {};
+  const teams = groups[groupIdx].teams;
+  const totals = {};
+  teams.forEach(tid => totals[tid] = 0);
+  for (const race of ['A','B']) {
+    if (res[race]) {
+      const pts = getRacePoints(res[race]);
+      for (const tid of teams) { totals[tid] = (totals[tid]||0) + (pts[tid]||0); }
+    }
+  }
+  return totals;
+}
+
+function getFinalTotalPts() {
+  const res = state.fResults || {};
+  const teams = state.finalistsIds;
+  const totals = {};
+  teams.forEach(tid => totals[tid] = 0);
+  for (const race of ['A','B']) {
+    if (res[race]) {
+      const pts = getRacePoints(res[race]);
+      for (const tid of teams) { totals[tid] = (totals[tid]||0) + (pts[tid]||0); }
+    }
+  }
+  return totals;
+}
+
+function sortByPts(totals) {
+  return Object.entries(totals)
+    .sort((a,b) => b[1]-a[1])
+    .map(([tid, pts]) => ({ teamId: parseInt(tid), pts }));
+}
+
+// =====================================================
+//  SCREEN 0 — VALIDATION
+// =====================================================
+function renderValidation() {
+  const grid = document.getElementById('teamGrid');
+  grid.innerHTML = TEAMS_DATA.map((t, i) => {
+    const present = state.present[i];
+    return `<div class="team-card ${present ? 'present':'absent'}" onclick="togglePresence(${i})" id="tc-${i}">
+      ${logoHTML(t.id, 32)}
+      <div class="team-name">${t.name}</div>
+      <div class="team-status">${present ? '✅':'❌'}</div>
+    </div>`;
+  }).join('');
+  updatePresenceInfo();
+}
+
+function togglePresence(idx) {
+  state.present[idx] = !state.present[idx];
+  saveState();
+  renderValidation();
+}
+
+function updatePresenceInfo() {
+  const n = state.present.filter(Boolean).length;
+  const pools = computePools(getPresentIds());
+  const info = document.getElementById('presenceInfo');
+  info.className = n >= 6 ? 'alert-ok text-center' : 'alert-warn text-center';
+  info.style.fontWeight = '700';
+  info.innerHTML = `${n} écuries présentes → ${pools.length} poules
+    (${pools.filter(p=>p.teams.length===4).length}×4 + ${pools.filter(p=>p.teams.length===3).length}×3)`;
+  const btn = document.getElementById('btnDraw');
+  if (n < 6) btn.classList.add('btn-disabled'); else btn.classList.remove('btn-disabled');
+}
+
+function getPresentIds() {
+  return TEAMS_DATA.filter((_, i) => state.present[i]).map(t => t.id);
+}
+
+// =====================================================
+//  DRAW ANIMATION
+// =====================================================
+function startDraw() {
+  const presentIds = getPresentIds();
+  if (presentIds.length < 6) { showToast('❌ Minimum 6 écuries requises'); return; }
+
+  state.pools = computePools(presentIds);
+  state.poolResults = {};
+  state.poolValidated = new Array(state.pools.length).fill(false);
+  saveState();
+
+  // Show overlay
+  const overlay = document.getElementById('drawOverlay');
+  overlay.classList.add('active');
+  document.getElementById('drawTitle').textContent = 'Tirage au sort en cours…';
+  document.getElementById('drawProgress').textContent = '';
+  document.getElementById('drawSlots').innerHTML = '';
+  document.getElementById('drawCloseBtn').style.display = 'none';
+  document.getElementById('drawSpinner').style.display = 'block';
+
+  // Animate pool reveals
+  let delay = 1200;
+  state.pools.forEach((pool, pi) => {
+    setTimeout(() => {
+      document.getElementById('drawSpinner').style.display = 'none';
+      document.getElementById('drawTitle').textContent = `🎲 POULE ${pool.letter}`;
+      document.getElementById('drawProgress').textContent = `${pi+1} / ${state.pools.length} poules`;
+
+      pool.teams.forEach((tid, ti) => {
+        const slot = document.createElement('div');
+        slot.className = 'draw-slot';
+        const t = getTeam(tid);
+        slot.innerHTML = `<div style="font-size:11px;color:var(--muted);margin-bottom:2px">Poule ${pool.letter}</div>
+          <div style="font-weight:700">${t.name}</div>`;
+        document.getElementById('drawSlots').appendChild(slot);
+        setTimeout(() => slot.classList.add('revealed'), ti * 200);
+      });
+    }, delay);
+    delay += pool.teams.length * 220 + 600;
+  });
+
+  setTimeout(() => {
+    document.getElementById('drawTitle').textContent = '✅ Tirage terminé !';
+    document.getElementById('drawProgress').textContent = `${state.pools.length} poules constituées`;
+    document.getElementById('drawCloseBtn').style.display = 'block';
+  }, delay + 400);
+}
+
+function closeDraw() {
+  document.getElementById('drawOverlay').classList.remove('active');
+  state.currentPool = 0;
+  state.currentRace = 'A';
+  renderPoolScreen();
+  showScreen('screen-pools');
+  setHeaderPhase('Qualifs');
+}
+
+// =====================================================
+//  SCREEN 1 — POOLS
+// =====================================================
+function renderPoolScreen() {
+  const pool = state.pools[state.currentPool];
+  if (!pool) return;
+
+  document.getElementById('currentPoolLabel').textContent = `POULE ${pool.letter}`;
+  document.getElementById('currentPoolTeams').textContent =
+    pool.teams.map(tid => getTeam(tid).name).join(' · ');
+  document.getElementById('poolsSubtitle').textContent =
+    `Poule ${pool.letter} — ${state.currentPool+1}/${state.pools.length}`;
+
+  // Tabs
+  ['A','B'].forEach(r => {
+    const tab = document.getElementById(`tab-${r}`);
+    const validated = state.poolValidated[state.currentPool];
+    tab.classList.toggle('active', state.currentRace === r);
+    tab.classList.toggle('done', !!(state.poolResults[state.currentPool]?.[r] && Object.keys(state.poolResults[state.currentPool][r]).length > 0));
+  });
+
+  document.getElementById('raceLabel').textContent =
+    `Course ${state.currentRace} — ${RACE_NAMES[state.currentRace]}`;
+
+  renderRacerList(pool.teams, 'P', state.currentPool, state.currentRace);
+  renderPoolStandings();
+
+  const validated = state.poolValidated[state.currentPool];
+  document.getElementById('btnValidatePool').textContent =
+    validated ? '✅ Poule validée' : '✅ Valider la Poule';
+  document.getElementById('btnValidatePool').disabled = validated;
+}
+
+function renderRacerList(teams, phase, groupIdx, race) {
+  let listId, resultsObj;
+  if (phase === 'P') { listId = 'racerList'; resultsObj = (state.poolResults[groupIdx] || {})[race] || {}; }
+  else if (phase === 'Q') { listId = 'racerListQ'; resultsObj = (state.qResults[groupIdx] || {})[race] || {}; }
+  else if (phase === 'S') { listId = 'racerListS'; resultsObj = (state.sResults[groupIdx] || {})[race] || {}; }
+  else if (phase === 'F') { listId = 'racerListF'; resultsObj = (state.fResults || {})[race] || {}; }
+
+  const usedRanks = new Set(Object.values(resultsObj).filter(v => v !== 'dnf').map(Number));
+  const maxRank = teams.length;
+
+  document.getElementById(listId).innerHTML = teams.map(tid => {
+    const t = getTeam(tid);
+    const rank = resultsObj[tid];
+    const pts = rank ? (rank === 'dnf' ? 0 : PTS[rank]) : null;
+    let rankClass = rank ? (rank === 'dnf' ? 'rank-dnf' : `rank-${rank}`) : 'rank-empty';
+    let rankLabel = rank ? (rank === 'dnf' ? 'DNF' : rank) : '?';
+
+    // Build rank buttons
+    let rankBtns = '';
+    for (let r = 1; r <= maxRank; r++) {
+      const disabled = usedRanks.has(r) && rank !== r;
+      const sel = rank === r ? 'selected' : '';
+      rankBtns += `<button class="btn-rank ${sel}" ${disabled?'disabled style="opacity:.3"':''} onclick="setRank('${phase}',${groupIdx},'${race}',${tid},${r})">${r}</button>`;
+    }
+    rankBtns += `<button class="btn-rank btn-rank-dnf ${rank==='dnf'?'selected':''}" onclick="setRank('${phase}',${groupIdx},'${race}',${tid},'dnf')">DNF</button>`;
+
+    return `<div class="racer-row ${rank && rank!=='dnf'?'ranked':''} ${rank==='dnf'?'dnf-row':''}">
+      <div class="racer-rank ${rankClass}">${rankLabel}</div>
+      ${logoHTML(tid, 30)}
+      <div class="racer-name">${t.name}</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div class="racer-pts">${pts !== null ? pts+'pts' : ''}</div>
+        <div class="racer-actions">${rankBtns}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setRank(phase, groupIdx, race, teamId, rank) {
+  // Remove same rank from others (only 1 team per rank)
+  let resultsObj;
+  if (phase === 'P') {
+    if (!state.poolResults[groupIdx]) state.poolResults[groupIdx] = {};
+    if (!state.poolResults[groupIdx][race]) state.poolResults[groupIdx][race] = {};
+    resultsObj = state.poolResults[groupIdx][race];
+  } else if (phase === 'Q') {
+    if (!state.qResults[groupIdx]) state.qResults[groupIdx] = {};
+    if (!state.qResults[groupIdx][race]) state.qResults[groupIdx][race] = {};
+    resultsObj = state.qResults[groupIdx][race];
+  } else if (phase === 'S') {
+    if (!state.sResults[groupIdx]) state.sResults[groupIdx] = {};
+    if (!state.sResults[groupIdx][race]) state.sResults[groupIdx][race] = {};
+    resultsObj = state.sResults[groupIdx][race];
+  } else if (phase === 'F') {
+    if (!state.fResults) state.fResults = {};
+    if (!state.fResults[race]) state.fResults[race] = {};
+    resultsObj = state.fResults[race];
+  }
+
+  if (rank !== 'dnf') {
+    for (const [tid, r] of Object.entries(resultsObj)) {
+      if (r === rank && parseInt(tid) !== teamId) delete resultsObj[tid];
+    }
+  }
+
+  // Toggle off if already selected
+  if (resultsObj[teamId] === rank) {
+    delete resultsObj[teamId];
+  } else {
+    resultsObj[teamId] = rank;
+  }
+
+  saveState();
+
+  if (phase === 'P') renderPoolScreen();
+  else if (phase === 'Q') renderGroupScreen('Q');
+  else if (phase === 'S') renderGroupScreen('S');
+  else if (phase === 'F') renderFinalScreen();
+}
+
+function selectRace(race) {
+  state.currentRace = race;
+  renderPoolScreen();
+}
+
+function navPool(dir) {
+  const next = state.currentPool + dir;
+  if (next < 0 || next >= state.pools.length) return;
+  state.currentPool = next;
+  state.currentRace = 'A';
+  renderPoolScreen();
+}
+
+function renderPoolStandings() {
+  const pi = state.currentPool;
+  const totals = getPoolTotalPts(pi);
+  const sorted = sortByPts(totals);
+  const hasResults = Object.keys(state.poolResults[pi] || {}).length > 0;
+
+  const card = document.getElementById('poolStandingsCard');
+  card.style.display = hasResults ? 'block' : 'none';
+  if (!hasResults) return;
+
+  document.getElementById('poolStandings').innerHTML = sorted.map((s,i) => {
+    const t = getTeam(s.teamId);
+    return `<div class="standing-row">
+      <div class="standing-pos">${i+1}</div>
+      ${logoHTML(s.teamId, 28)}
+      <div class="standing-name">${t.name}</div>
+      <div class="standing-pts">${s.pts}</div>
+    </div>`;
+  }).join('');
+}
+
+function validateCurrentPool() {
+  const pi = state.currentPool;
+  const pool = state.pools[pi];
+  const res = state.poolResults[pi] || {};
+
+  // Check both races have results for all teams
+  for (const race of ['A','B']) {
+    if (!res[race]) { showToast('⚠️ Saisir les 2 courses avant de valider'); return; }
+    const missing = pool.teams.filter(tid => !(tid in res[race]));
+    if (missing.length > 0) { showToast('⚠️ Tous les pilotes doivent avoir un classement'); return; }
+  }
+
+  state.poolValidated[pi] = true;
+  saveState();
+  showToast(`✅ Poule ${pool.letter} validée !`);
+
+  // Check if all pools done
+  if (state.poolValidated.every(Boolean)) {
+    setTimeout(showQualifResults, 600);
+  } else {
+    // Nav to next unvalidated pool
+    const nextUnvalidated = state.poolValidated.findIndex((v,i) => !v && i > pi);
+    if (nextUnvalidated !== -1) {
+      state.currentPool = nextUnvalidated;
+      state.currentRace = 'A';
+    }
+    renderPoolScreen();
+  }
+}
+
+function goBackToPools() {
+  showScreen('screen-pools');
+  setHeaderPhase('Qualifs');
+}
+
+// =====================================================
+//  SCREEN 2 — QUALIF RESULTS
+// =====================================================
+function showQualifResults() {
+  showScreen('screen-qualifs');
+  setHeaderPhase('Classement');
+
+  // Compute all pool standings
+  // 1st & 2nd of each pool are qualified directly
+  const directQ = [];
+  const thirds = [];
+  const rest = [];
+
+  state.pools.forEach((pool, pi) => {
+    const totals = getPoolTotalPts(pi);
+    const sorted = sortByPts(totals);
+    const maxPossible = 20; // same for 3 and 4 (10+10)
+    sorted.forEach((s, rank0) => {
+      const normalized = maxPossible > 0 ? s.pts / maxPossible : 0;
+      if (rank0 === 0) directQ.push({ ...s, pool: pool.letter, poolRank: 1 });
+      else if (rank0 === 1) directQ.push({ ...s, pool: pool.letter, poolRank: 2 });
+      else if (rank0 === 2) thirds.push({ ...s, pool: pool.letter, normalized });
+      else rest.push({ ...s, pool: pool.letter, poolRank: rank0+1 });
+    });
+  });
+
+  // Best 4 thirds
+  thirds.sort((a,b) => b.normalized - a.normalized || b.pts - a.pts);
+  const wildcard = thirds.slice(0, 4);
+  const eliminated = [...thirds.slice(4), ...rest];
+
+  // Check for tie at 16th position boundary
+  const hasTie = thirds.length >= 5 && thirds[3].normalized === thirds[4].normalized && thirds[3].pts === thirds[4].pts;
+
+  state.qualifiedIds = [...directQ.map(t=>t.teamId), ...wildcard.map(t=>t.teamId)];
+  saveState();
+
+  // Render
+  const all = [
+    ...directQ.map(t => ({...t, type:'direct'})),
+    ...wildcard.map(t => ({...t, type:'wild'})),
+    ...eliminated.map(t => ({...t, type:'out'}))
+  ];
+
+  document.getElementById('qualifList').innerHTML = all.map((s,i) => {
+    const t = getTeam(s.teamId);
+    const badge = s.type==='direct' ? '<span class="standing-badge badge-q">QUALIFIÉ</span>'
+      : s.type==='wild' ? '<span class="standing-badge badge-w">REPÊCHÉ</span>'
+      : '<span class="standing-badge badge-x">ÉLIMINÉ</span>';
+    const posClass = s.type==='direct' ? 'pos-qualified' : s.type==='wild' ? 'pos-wild' : 'pos-eliminated';
+    return `<div class="standing-row">
+      <div class="standing-pos ${posClass}">${i+1}</div>
+      ${logoHTML(s.teamId, 28)}
+      <div class="standing-name">${t.name}</div>
+      <div class="standing-pts">${s.pts}pts</div>
+      ${badge}
+    </div>`;
+  }).join('');
+
+  document.getElementById('tieAlert').style.display = hasTie ? 'block' : 'none';
+}
+
+// =====================================================
+//  SCREEN 3 — QUARTERS
+// =====================================================
+function startQuarters() {
+  state.qGroups = computeGroups(state.qualifiedIds, 4);
+  state.qResults = {};
+  state.qValidated = new Array(state.qGroups.length).fill(false);
+  state.currentGroupQ = 0;
+  state.currentRaceQ = 'A';
+  saveState();
+  showScreen('screen-quarters');
+  setHeaderPhase('Quarts');
+  renderGroupScreen('Q');
+}
+
+function renderGroupScreen(phase) {
+  const groups = phase === 'Q' ? state.qGroups : state.sGroups;
+  const currentGroup = phase === 'Q' ? state.currentGroupQ : state.currentGroupS;
+  const currentRace = phase === 'Q' ? state.currentRaceQ : state.currentRaceS;
+  const validated = phase === 'Q' ? state.qValidated : state.sValidated;
+
+  const group = groups[currentGroup];
+  if (!group) return;
+
+  const suffix = phase;
+  document.getElementById(`currentGroupLabel${suffix}`).textContent = `GROUPE ${currentGroup+1}`;
+  document.getElementById(`currentGroupTeams${suffix}`).textContent =
+    group.teams.map(tid => getTeam(tid).name).join(' · ');
+
+  if (phase === 'Q') {
+    document.getElementById('quartersSubtitle').textContent =
+      `Groupe ${currentGroup+1}/${groups.length}`;
+    document.getElementById('raceLabelQ').textContent = `Course ${currentRace} — ${RACE_NAMES[currentRace]}`;
+    ['A','B'].forEach(r => {
+      const tab = document.getElementById(`tabQ-${r}`);
+      const res = state.qResults[currentGroup];
+      tab.classList.toggle('active', currentRace === r);
+      tab.classList.toggle('done', !!(res?.[r] && Object.keys(res[r]).length > 0));
+    });
+    renderRacerList(group.teams, 'Q', currentGroup, currentRace);
+    renderGroupStandings('Q');
+  } else {
+    document.getElementById('semisSubtitle').textContent =
+      `Groupe ${currentGroup+1}/${groups.length}`;
+    document.getElementById('raceLabelS').textContent = `Course ${currentRace} — ${RACE_NAMES[currentRace]}`;
+    ['A','B'].forEach(r => {
+      const tab = document.getElementById(`tabS-${r}`);
+      const res = state.sResults[currentGroup];
+      tab.classList.toggle('active', currentRace === r);
+      tab.classList.toggle('done', !!(res?.[r] && Object.keys(res[r]).length > 0));
+    });
+    renderRacerList(group.teams, 'S', currentGroup, currentRace);
+    renderGroupStandings('S');
+  }
+}
+
+function renderGroupStandings(phase) {
+  const currentGroup = phase === 'Q' ? state.currentGroupQ : state.currentGroupS;
+  const totals = getGroupTotalPts(phase, currentGroup);
+  const sorted = sortByPts(totals);
+  const hasResults = Object.keys(phase === 'Q' ?
+    (state.qResults[currentGroup] || {}) : (state.sResults[currentGroup] || {})).length > 0;
+
+  const cardId = `groupStandingsCard${phase}`;
+  const listId = `groupStandings${phase}`;
+  document.getElementById(cardId).style.display = hasResults ? 'block' : 'none';
+  if (!hasResults) return;
+
+  document.getElementById(listId).innerHTML = sorted.map((s,i) => {
+    const t = getTeam(s.teamId);
+    const badge = i < 2 ? '<span class="standing-badge badge-q">QUALIFIÉ</span>'
+      : '<span class="standing-badge badge-x">ÉLIMINÉ</span>';
+    return `<div class="standing-row">
+      <div class="standing-pos ${i<2?'pos-qualified':'pos-eliminated'}">${i+1}</div>
+      ${logoHTML(s.teamId, 28)}
+      <div class="standing-name">${t.name}</div>
+      <div class="standing-pts">${s.pts}pts</div>
+      ${badge}
+    </div>`;
+  }).join('');
+}
+
+function selectRaceKO(phase, race) {
+  if (phase === 'Q') { state.currentRaceQ = race; renderGroupScreen('Q'); }
+  else if (phase === 'S') { state.currentRaceS = race; renderGroupScreen('S'); }
+  else if (phase === 'F') { state.currentRaceF = race; renderFinalScreen(); }
+}
+
+function navGroup(phase, dir) {
+  if (phase === 'Q') {
+    const next = state.currentGroupQ + dir;
+    if (next < 0 || next >= state.qGroups.length) return;
+    state.currentGroupQ = next;
+    state.currentRaceQ = 'A';
+    renderGroupScreen('Q');
+  } else if (phase === 'S') {
+    const next = state.currentGroupS + dir;
+    if (next < 0 || next >= state.sGroups.length) return;
+    state.currentGroupS = next;
+    state.currentRaceS = 'A';
+    renderGroupScreen('S');
+  }
+}
+
+function validateCurrentGroup(phase) {
+  const groups = phase === 'Q' ? state.qGroups : state.sGroups;
+  const currentGroup = phase === 'Q' ? state.currentGroupQ : state.currentGroupS;
+  const validated = phase === 'Q' ? state.qValidated : state.sValidated;
+  const results = phase === 'Q' ? state.qResults : state.sResults;
+
+  const group = groups[currentGroup];
+  const res = results[currentGroup] || {};
+
+  for (const race of ['A','B']) {
+    if (!res[race]) { showToast('⚠️ Saisir les 2 courses avant de valider'); return; }
+    const missing = group.teams.filter(tid => !(tid in res[race]));
+    if (missing.length > 0) { showToast('⚠️ Tous les pilotes doivent avoir un classement'); return; }
+  }
+
+  validated[currentGroup] = true;
+  saveState();
+  showToast(`✅ Groupe ${currentGroup+1} validé !`);
+
+  if (validated.every(Boolean)) {
+    if (phase === 'Q') {
+      setTimeout(showSemisDraw, 600);
+    } else {
+      setTimeout(showFinal, 600);
+    }
+  } else {
+    const next = validated.findIndex((v,i) => !v && i > currentGroup);
+    if (next !== -1) {
+      if (phase === 'Q') state.currentGroupQ = next; else state.currentGroupS = next;
+    }
+    renderGroupScreen(phase);
+  }
+}
+
+// =====================================================
+//  SCREEN 4 — SEMIS DRAW
+// =====================================================
+function showSemisDraw() {
+  // Compute 8 qualifieds from quarters
+  const semisIds = [];
+  state.qGroups.forEach((group, gi) => {
+    const totals = getGroupTotalPts('Q', gi);
+    const sorted = sortByPts(totals);
+    semisIds.push(sorted[0].teamId, sorted[1].teamId);
+  });
+  state.semisIds = semisIds;
+  saveState();
+
+  showScreen('screen-semis-draw');
+  setHeaderPhase('Demis');
+
+  document.getElementById('semisQualifiedList').innerHTML = semisIds.map((tid,i) => {
+    const t = getTeam(tid);
+    return `<div class="standing-row">
+      <div class="standing-pos pos-qualified">${i+1}</div>
+      ${logoHTML(tid, 28)}
+      <div class="standing-name">${t.name}</div>
+      <span class="standing-badge badge-q">QUALIFIÉ</span>
+    </div>`;
+  }).join('');
+}
+
+function drawSemis() {
+  state.sGroups = computeGroups(state.semisIds, 4);
+  state.sResults = {};
+  state.sValidated = new Array(state.sGroups.length).fill(false);
+  state.currentGroupS = 0;
+  state.currentRaceS = 'A';
+  saveState();
+  showScreen('screen-semis');
+  setHeaderPhase('Demis');
+  renderGroupScreen('S');
+}
+
+// =====================================================
+//  SCREEN 6 — FINAL
+// =====================================================
+function showFinal() {
+  // Compute 4 finalists from semis
+  const finalists = [];
+  state.sGroups.forEach((group, gi) => {
+    const totals = getGroupTotalPts('S', gi);
+    const sorted = sortByPts(totals);
+    finalists.push(sorted[0].teamId, sorted[1].teamId);
+  });
+  state.finalistsIds = finalists;
+  state.fResults = {};
+  saveState();
+
+  showScreen('screen-final');
+  setHeaderPhase('Finale');
+  renderFinalScreen();
+}
+
+function renderFinalScreen() {
+  const teams = state.finalistsIds;
+  const race = state.currentRaceF;
+
+  ['A','B'].forEach(r => {
+    const tab = document.getElementById(`tabF-${r}`);
+    tab.classList.toggle('active', race === r);
+    tab.classList.toggle('done', !!(state.fResults[r] && Object.keys(state.fResults[r]).length > 0));
+  });
+  document.getElementById('raceLabelF').textContent = `Course ${race} — ${RACE_NAMES[race]}`;
+  renderRacerList(teams, 'F', null, race);
+}
+
+// =====================================================
+//  SCREEN 7 — PODIUM
+// =====================================================
+function showPodium() {
+  // Validate final results
+  for (const race of ['A','B']) {
+    if (!state.fResults[race]) { showToast('⚠️ Saisir les 2 courses de finale'); return; }
+    const missing = state.finalistsIds.filter(tid => !(tid in state.fResults[race]));
+    if (missing.length > 0) { showToast('⚠️ Tous les finalistes doivent avoir un classement'); return; }
+  }
+
+  const totals = getFinalTotalPts();
+  const sorted = sortByPts(totals);
+
+  // Champion du Court = 1er de la course A
+  const courseARes = state.fResults['A'];
+  const championCourt = state.finalistsIds.find(tid => courseARes[tid] === 1);
+  // Champion du Long = 1er de la course B
+  const courseBRes = state.fResults['B'];
+  const championLong = state.finalistsIds.find(tid => courseBRes[tid] === 1);
+  // Champion Général = 1er du cumul
+  const championGeneral = sorted[0].teamId;
+
+  showScreen('podiumScreen');
+  setHeaderPhase('Podium 🏆');
+
+  // Podium visual (2nd left, 1st center, 3rd right)
+  const p1 = sorted[0], p2 = sorted[1], p3 = sorted[2];
+  document.getElementById('podiumWrap').innerHTML = `
+    <div class="podium-step p2">
+      ${logoHTML(p2.teamId, 60)}
+      <div class="podium-team-name">${getTeam(p2.teamId).name}</div>
+      <div class="podium-block">
+        <div class="podium-rank-num">2</div>
+        <div class="podium-pts-small">${p2.pts}pts</div>
+      </div>
+    </div>
+    <div class="podium-step p1">
+      ${logoHTML(p1.teamId, 72)}
+      <div class="podium-team-name">${getTeam(p1.teamId).name}</div>
+      <div class="podium-block">
+        <div class="podium-rank-num">1</div>
+        <div class="podium-pts-small">${p1.pts}pts</div>
+      </div>
+    </div>
+    <div class="podium-step p3">
+      ${logoHTML(p3?.teamId, 60)}
+      <div class="podium-team-name">${p3 ? getTeam(p3.teamId).name : ''}</div>
+      <div class="podium-block">
+        <div class="podium-rank-num">3</div>
+        <div class="podium-pts-small">${p3?.pts ?? 0}pts</div>
+      </div>
+    </div>`;
+
+  document.getElementById('trophyRow').innerHTML = `
+    <div class="trophy-card">
+      <div class="trophy-icon">⚡</div>
+      <div class="trophy-label">Champion du Court</div>
+      <div class="trophy-winner">${championCourt ? getTeam(championCourt).name : '—'}</div>
+    </div>
+    <div class="trophy-card">
+      <div class="trophy-icon">🏁</div>
+      <div class="trophy-label">Champion du Long</div>
+      <div class="trophy-winner">${championLong ? getTeam(championLong).name : '—'}</div>
+    </div>
+    <div class="trophy-card">
+      <div class="trophy-icon">🏆</div>
+      <div class="trophy-label">Classement Général</div>
+      <div class="trophy-winner">${getTeam(championGeneral).name}</div>
+    </div>`;
+
+  document.getElementById('finalStandings').innerHTML = sorted.map((s,i) => {
+    const medals = ['🥇','🥈','🥉','4️⃣'];
+    const t = getTeam(s.teamId);
+    return `<div class="standing-row">
+      <div class="standing-pos" style="font-size:16px">${medals[i]||i+1}</div>
+      ${logoHTML(s.teamId, 28)}
+      <div class="standing-name">${t.name}</div>
+      <div class="standing-pts">${s.pts}pts</div>
+    </div>`;
+  }).join('');
+
+  launchConfetti();
+}
+
+function launchConfetti() {
+  const colors = ['#E10600','#FFD700','#22c55e','#3b82f6','#f97316','#9B59B6'];
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.cssText = `
+        left: ${Math.random()*100}vw;
+        background: ${colors[Math.floor(Math.random()*colors.length)]};
+        animation-duration: ${1.5 + Math.random()*2}s;
+        animation-delay: 0s;
+        top: -10px;
+        width: ${6+Math.random()*6}px;
+        height: ${6+Math.random()*6}px;
+        border-radius: ${Math.random()>.5?'50%':'2px'};
+      `;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }, i * 60);
+  }
+}
+
+// =====================================================
+//  VAR SYSTEM
+// =====================================================
+function openVAR(phase = 'P') {
+  state.varContext = phase;
+  const teams = phase === 'P' ? state.pools[state.currentPool].teams
+    : phase === 'Q' ? state.qGroups[state.currentGroupQ].teams
+    : phase === 'S' ? state.sGroups[state.currentGroupS].teams
+    : state.finalistsIds;
+
+  document.getElementById('varTeamsList').innerHTML = `
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Sélectionner le <strong>FAUTIF</strong> :</p>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${teams.map(tid => {
+        const t = getTeam(tid);
+        return `<button class="modal-team-btn" onclick="applyVAR(${tid})">
+          ${logoHTML(tid, 24)} ${t.name}
+        </button>`;
+      }).join('')}
+    </div>`;
+
+  document.getElementById('varModal').classList.add('active');
+}
+
+function applyVAR(fautifId) {
+  const phase = state.varContext;
+  const race = phase === 'P' ? state.currentRace
+    : phase === 'Q' ? state.currentRaceQ
+    : phase === 'S' ? state.currentRaceS
+    : state.currentRaceF;
+
+  const groupIdx = phase === 'P' ? state.currentPool
+    : phase === 'Q' ? state.currentGroupQ
+    : phase === 'S' ? state.currentGroupS
+    : null;
+
+  // Find the "victime" — any team that is not the fautif and was racing straight
+  // Per rules: victim gets 6pts (rank 2 points)
+  // We set fautif = DNF, then prompt for victim selection (simplified: next click)
+  // For UX simplicity: fautif = DNF, victim score = 6pts (manually override rank to 2)
+  closeVAR();
+  showToast(`⚖️ VAR : ${getTeam(fautifId).name} → DNF. Attribuez 6pts à la victime en la classant 2e.`);
+
+  // Auto-set fautif to DNF
+  setRank(phase, groupIdx, race, fautifId, 'dnf');
+}
+
+function closeVAR() {
+  document.getElementById('varModal').classList.remove('active');
+}
+
+// =====================================================
+//  RESET
+// =====================================================
+function resetAll() {
+  if (!confirm('⚠️ Réinitialiser toute la compétition ?')) return;
+  localStorage.removeItem('dragsterCup');
+  state = {
+    present: new Array(24).fill(true),
+    pools: [], poolResults: {}, poolValidated: [],
+    qualifiedIds: [],
+    qGroups: [], qResults: {}, qValidated: [],
+    semisIds: [],
+    sGroups: [], sResults: {}, sValidated: [],
+    finalistsIds: [],
+    fResults: {},
+    currentPool: 0, currentRace: 'A',
+    currentGroupQ: 0, currentRaceQ: 'A',
+    currentGroupS: 0, currentRaceS: 'A',
+    currentRaceF: 'A',
+    varContext: null,
+  };
+  showScreen('screen-validate');
+  setHeaderPhase('Setup');
+  renderValidation();
+}
+
+// =====================================================
+//  INIT
+// =====================================================
+loadState();
+renderValidation();
+
+// Restore screen on reload
+if (state.finalistsIds.length > 0 && state.fResults && Object.keys(state.fResults).length > 0) {
+  // Check if podium was shown
+}
+</script>
+</body>
+</html>
