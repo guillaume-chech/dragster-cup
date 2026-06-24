@@ -1087,6 +1087,114 @@
     .screen {
       padding-bottom: max(16px, env(safe-area-inset-bottom));
     }
+
+    /* ===== TIMELINE ===== */
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      padding-left: 6px;
+      margin-top: 10px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      display: flex;
+      gap: 16px;
+      position: relative;
+      align-items: flex-start;
+    }
+
+    .timeline-badge {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--bg2);
+      border: 2px solid var(--red);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 10px;
+      font-weight: 700;
+      z-index: 1;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px rgba(225, 6, 0, 0.4);
+    }
+
+    .timeline-content {
+      flex: 1;
+    }
+
+    .timeline-content h4 {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--red);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+    }
+
+    .timeline-content p {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* ===== POINTS GRID ===== */
+    .points-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .points-item {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 4px;
+      gap: 6px;
+      transition: border-color 0.2s;
+    }
+    
+    .points-item:hover {
+      border-color: var(--red);
+    }
+
+    .points-pos {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .points-val {
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gold);
+    }
   </style>
 </head>
 
@@ -1096,11 +1204,86 @@
     <header class="app-header">
       <span class="header-logo">🏁</span>
       <span class="header-title">Dragster Cup</span>
-      <span class="header-phase" id="headerPhase">Setup</span>
+      <span class="header-phase" id="headerPhase">Règles</span>
     </header>
 
+    <!-- ===================== SCREEN -1 : INTRO ===================== -->
+    <div class="screen active" id="screen-intro">
+      <div class="phase-banner" style="background: linear-gradient(135deg, var(--red-dark), #150000); border-color: var(--red);">
+        <div class="phase-name">🏆 DÉROULEMENT</div>
+        <div class="phase-sub">Dragster Cup — Règlement officiel</div>
+      </div>
+
+      <!-- Timeline des étapes -->
+      <div class="card">
+        <div class="card-title">🏎 Les Étapes de la Compétition</div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-badge">1</div>
+            <div class="timeline-content">
+              <h4>Validation &amp; Tirage</h4>
+              <p>Appel des écuries et constitution automatique des poules par tirage au sort.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-badge">2</div>
+            <div class="timeline-content">
+              <h4>Qualifications</h4>
+              <p>Poules de 3 ou 4. Chaque écurie effectue <strong>2 courses</strong> (Sprint 3m + Long 6m). Le Top 16 se qualifie.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-badge">3</div>
+            <div class="timeline-content">
+              <h4>Phases Finales</h4>
+              <p>Quarts de finale (4 groupes) puis Demi-finales (2 groupes). Format à élimination directe (2 courses).</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-badge">4</div>
+            <div class="timeline-content">
+              <h4>Grande Finale &amp; Titres</h4>
+              <p>Les 4 écuries restantes s'affrontent pour désigner le Champion Général, du Court et du Long !</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barème des points -->
+      <div class="card">
+        <div class="card-title">🎯 Attribution des Points</div>
+        <div class="points-grid">
+          <div class="points-item">
+            <span class="points-pos rank-1">1er</span>
+            <span class="points-val">10 pts</span>
+          </div>
+          <div class="points-item">
+            <span class="points-pos rank-2">2e</span>
+            <span class="points-val">6 pts</span>
+          </div>
+          <div class="points-item">
+            <span class="points-pos rank-3">3e</span>
+            <span class="points-val">3 pts</span>
+          </div>
+          <div class="points-item">
+            <span class="points-pos rank-4">4e</span>
+            <span class="points-val">1 pt</span>
+          </div>
+        </div>
+        <div class="alert-warn" style="margin-top: 12px; font-size: 12px; display: flex; align-items: flex-start; gap: 8px;">
+          <span style="font-size: 14px; line-height: 1;">⚠️</span>
+          <span><strong>Collision / DNF :</strong> 0 pt pour le fautif. Les victimes de collisions reçoivent un bonus de <strong>+6 pts</strong> (décision VAR).</span>
+        </div>
+      </div>
+
+      <!-- Bouton de démarrage -->
+      <button class="btn btn-primary btn-full" onclick="startSetup()" style="font-family: var(--font-display); letter-spacing: 2px; margin-top: 4px;">
+        🚀 Commencer l'Installation
+      </button>
+    </div>
+
     <!-- ===================== SCREEN 0 : VALIDATION ===================== -->
-    <div class="screen active" id="screen-validate">
+    <div class="screen" id="screen-validate">
       <div class="phase-banner">
         <div class="phase-name">🏎 VALIDATION</div>
         <div class="phase-sub">Cochez les écuries présentes</div>
@@ -2586,9 +2769,14 @@
         currentRaceF: 'A',
         varContext: null,
       };
+      showScreen('screen-intro');
+      setHeaderPhase('Règles');
+      renderValidation();
+    }
+
+    function startSetup() {
       showScreen('screen-validate');
       setHeaderPhase('Setup');
-      renderValidation();
     }
 
     // =====================================================
@@ -2598,8 +2786,41 @@
     renderValidation();
 
     // Restore screen on reload
-    if (state.finalistsIds.length > 0 && state.fResults && Object.keys(state.fResults).length > 0) {
-      // Check if podium was shown
+    if (state.pools && state.pools.length > 0) {
+      if (state.finalistsIds.length > 0 && state.fResults && Object.keys(state.fResults).length > 0) {
+        // If final results exist, show podium
+        showPodium();
+      } else if (state.finalistsIds.length > 0) {
+        // If finalists are decided, show final screen
+        showScreen('screen-final');
+        setHeaderPhase('Finale');
+        renderFinalScreen();
+      } else if (state.semisIds.length > 0 && state.sGroups && state.sGroups.length > 0) {
+        // If semis are drawn
+        showScreen('screen-semis');
+        setHeaderPhase('Demis');
+        renderGroupScreen('S');
+      } else if (state.semisIds.length > 0) {
+        // If semis draw is next
+        showSemisDraw();
+      } else if (state.qualifiedIds.length > 0 && state.qGroups && state.qGroups.length > 0) {
+        // If quarters are drawn
+        showScreen('screen-quarters');
+        setHeaderPhase('Quarts');
+        renderGroupScreen('Q');
+      } else if (state.qualifiedIds.length > 0) {
+        // If qualifications standings screen is next
+        showQualifResults();
+      } else {
+        // Otherwise, show qualifications pools
+        showScreen('screen-pools');
+        setHeaderPhase('Qualifs');
+        renderPoolScreen();
+      }
+    } else {
+      // If no competition is active, show the intro screen
+      showScreen('screen-intro');
+      setHeaderPhase('Règles');
     }
   </script>
 </body>
